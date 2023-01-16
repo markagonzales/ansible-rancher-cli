@@ -1,0 +1,28 @@
+---
+
+- name: Check Rancher CLI Binary Install
+  ansible.builtin.stat:
+    path: "{{ rancher_cli_path }}"
+  register: rancher_cli_bin
+
+- name: Download Rancher CLI Installer Package
+  ansible.builtin.get_url:
+    url: "{{ rancher_cli_installer_url }}"
+    dest: "{{ rancher_cli_local_installer_path }}/{{ rancher_cli_local_installer_name }}"
+  when: rancher_cli_bin is defined and rancher_cli_bin.stat.exists == False
+  register: rancher_cli_installer_package
+
+- name: Extract Rancher CLI Installer
+  ansible.builtin.unarchive:
+    src: "{{ rancher_cli_local_installer_path }}/{{ rancher_cli_local_installer_name }}"
+    dest: "{{ rancher_cli_local_installer_path }}"
+  when: rancher_cli_bin is defined and rancher_cli_bin.stat.exists == False
+
+# Install is just moving the binary in place
+- name: Perform Rancher CLI Install
+  ansible.builtin.copy:
+    src: "{{ rancher_cli_local_installer_extraction_path }}/rancher"
+    dest: "{{ rancher_cli_path }}"
+    mode: 0755
+    owner: root
+  when: rancher_cli_bin is defined and rancher_cli_bin.stat.exists == False
